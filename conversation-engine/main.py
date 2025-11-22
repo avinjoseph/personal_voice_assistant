@@ -1,4 +1,5 @@
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import numpy as np
 import sounddevice as sd
 import scipy.io.wavfile as wav
@@ -6,9 +7,10 @@ import tempfile
 import logging
 import threading
 from faster_whisper import WhisperModel
-from langchain_community.chat_models import ChatOllama
+# from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_ollama import ChatOllama
 import torch
 import shutil, subprocess
 
@@ -26,6 +28,7 @@ except Exception:
             _has_cuda = True
         except Exception:
             _has_cuda = False
+# _has_cuda = False
 
 WHISPER_DEVICE = "cuda" if _has_cuda else "cpu"
 # Prefer float16 on GPU for speed/accuracy tradeoff, keep int8 for CPU
@@ -52,6 +55,7 @@ def main():
     Main function to run the voice-driven chat loop.
     """
     # --- 1. Initialize Models ---
+    logging.info(f"Using device: {WHISPER_DEVICE} ({WHISPER_COMPUTE_TYPE}) for Whisper model.")
     logging.info("Loading models...")
     try:
         whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)

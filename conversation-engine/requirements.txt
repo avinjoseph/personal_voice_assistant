@@ -5,6 +5,8 @@ torch
 # For LLM integration
 langchain
 langchain-community
+langchain-core
+ollama
 
 # For audio recording from microphone
 sounddevice

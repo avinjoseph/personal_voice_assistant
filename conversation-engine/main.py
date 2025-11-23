@@ -7,12 +7,15 @@ import tempfile
 import logging
 import threading
 from faster_whisper import WhisperModel
-# from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 import torch
 import shutil, subprocess
+from melo.api import TTS
+
+# os.environ["MECABRC"] = r"d:\Projects\personal_voice_assistant\.venv\lib\site-packages\unidic\dicdir\mecabrc"
+
 
 # --- Configuration ---
 # Whisper Model
@@ -33,6 +36,10 @@ except Exception:
 WHISPER_DEVICE = "cuda" if _has_cuda else "cpu"
 # Prefer float16 on GPU for speed/accuracy tradeoff, keep int8 for CPU
 WHISPER_COMPUTE_TYPE = "float16" if _has_cuda else "int8"
+
+# MeloTTS Model
+MELO_MODEL_ID = "EN-US-HCL-v2"
+MELO_DEVICE = "cuda" if _has_cuda else "cpu"
 
 # Ollama Model
 OLLAMA_MODEL_NAME = "gemma3:1b" 
@@ -60,6 +67,14 @@ def main():
     try:
         whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)
         llm = ChatOllama(model=OLLAMA_MODEL_NAME)
+        logging.info("Loading MeloTTS model, this may take a moment on first run...")
+        melo_model = TTS(language="EN",device=MELO_DEVICE)
+        
+        speaker_ids = melo_model.hps.data.spk2id
+        
+        speaker_id = list(speaker_ids.values())[0]
+        logging.info(f"Using MeloTTS speaker ID: {speaker_id}")
+
         logging.info("Models loaded successfully.")
     except Exception as e:
         logging.error(f"Failed to load models: {e}")
@@ -102,9 +117,33 @@ def main():
 
             # --- 3.3. Get LLM Response ---
             logging.info("Sending text to LLM...")
-            response = chain.invoke({"question": transcribed_text})
-            
+            raw_response = chain.invoke({"question": transcribed_text})
+
+            if isinstance(raw_response, dict):
+                response = raw_response.get("text", "")
+            else:
+                response = str(raw_response)
+
+            response = response.strip()
             print(f"Assistant: {response}")
+
+            # --- 3.4. Convert Response to Speech ---
+            logging.info("Converting response to speech...")
+            tmp_speech_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            tmp_speech_file.close()
+            try:
+                # Generate speech audio file
+                melo_model.tts_to_file(response,speaker_id, tmp_speech_file.name)
+
+                # Play the generated audio file
+                samplerate, audio_data = wav.read(tmp_speech_file.name)
+                sd.play(audio_data, samplerate)
+                sd.wait()
+            finally:
+                # Clean up the temporary file
+                if os.path.exists(tmp_speech_file.name):
+                    os.remove(tmp_speech_file.name)
+            
             print("-" * 50)
 
         except KeyboardInterrupt:

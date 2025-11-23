@@ -6,9 +6,14 @@ torch
 langchain
 langchain-community
 langchain-core
-ollama
+langchain-ollama
 
 # For audio recording from microphone
 sounddevice
 scipy
 numpy
+
+# For Text-to-Speech
+MeloTTS
+nltk
+eng-to-ipa

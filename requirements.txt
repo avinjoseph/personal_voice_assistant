@@ -2,6 +2,9 @@
 faster-whisper
 torch
 
+# For API requests
+requests
+
 # For LLM integration
 langchain
 langchain-community

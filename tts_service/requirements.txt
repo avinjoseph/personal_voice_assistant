@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+git+https://github.com/myshell-ai/MeloTTS.git
+nltk
+mecab-python3

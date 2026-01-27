@@ -8,18 +8,19 @@ A voice assistant application for experimenting with state-of-the-art transcript
 
 ### Prerequisites
 
-*   **Python 3.10**
-*   An NVIDIA GPU with a compatible CUDA version (optional, for GPU acceleration).
-*   [Ollama](https://ollama.com/) installed and running. You'll also need to have a model pulled, for example:
-    ```bash
-    ollama run gemma3:1b
-    ```
+- **Python 3.10**
+- An NVIDIA GPU with a compatible CUDA version (optional, for GPU acceleration).
+- [Ollama](https://ollama.com/) installed and running. You'll also need to have a model pulled, for example:
+  ```bash
+  ollama run gemma3:1b
+  ```
 
 ### Setup Instructions
 
 1.  **Clone the repository and navigate to the project directory.**
 
 2.  **Create and activate a Python virtual environment:**
+
     ```bash
     # Create the virtual environment
     python -m venv .venv
@@ -45,9 +46,9 @@ By default, `pip` will install a CPU-only version of PyTorch. If you have a comp
     pip uninstall torch
     ```
 2.  **Install the CUDA-enabled version:**
-    *   Go to the [PyTorch website](https://pytorch.org/get-started/locally/).
-    *   Select the options that match your system (e.g., `Windows`, `Pip`, your version of `CUDA`).
-    *   Run the generated command. It will look something like this:
+    - Go to the [PyTorch website](https://pytorch.org/get-started/locally/).
+    - Select the options that match your system (e.g., `Windows`, `Pip`, your version of `CUDA`).
+    - Run the generated command. It will look something like this:
     ```bash
     # This is an example for CUDA 12.1. Use the command from the website.
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
@@ -72,7 +73,7 @@ The Text-to-Speech model, MeloTTS, requires an additional setup step to download
 After completing the setup and ensuring Ollama is running, start the voice assistant:
 
 ```bash
-python conversation-engine/main.py
+python main.py
 ```
 
 The application will use your default microphone. Speak, and the assistant will respond after you stop talking. To exit, press `Ctrl+C`.

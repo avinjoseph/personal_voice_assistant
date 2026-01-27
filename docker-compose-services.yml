@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  # 1. ORCHESTRATOR (The Brain)
+  orchestrator:
+    build: ./orchestrator
+    container_name: orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - WHISPER_URL=http://whisper-service:8001
+      - TTS_URL=http://tts-service:8002
+      - OLLAMA_URL=http://ollama:11434
+      - TEAM_CALENDAR_ID=${TEAM_CALENDAR_ID}
+    networks:
+      - voice-network
+    depends_on:
+      - whisper-service
+      - tts-service
+      - ollama
+
+  # 2. WHISPER (ASR)
+  whisper-service:
+    build: ./whisper_service
+    container_name: whisper_service
+    ports:
+      - "8001:8001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/huggingface:/root/.cache/huggingface
+    environment:
+      - DEVICE=${DEVICE}
+    networks:
+      - voice-network
+
+  # 3. MELO TTS (Speech Synthesis)
+  tts-service:
+    build: ./tts_service
+    container_name: tts_service
+    ports:
+      - "8002:8002"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/huggingface:/root/.cache/huggingface
+     # - ./model_cache/nltk:/root/nltk_data
+    environment:
+      - DEVICE=${DEVICE}
+    networks:
+      - voice-network
+
+  # 4. OLLAMA (LLM)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/ollama:/root/.ollama
+    networks:
+      - voice-network
+
+    environment:
+      - OLLAMA_LOAD_TIMEOUT=30m # Wait up to 30 mins for model to load
+      - OLLAMA_KEEP_ALIVE=-1
+networks:
+  voice-network:
+    name: voice_shared_net
+    driver: bridge

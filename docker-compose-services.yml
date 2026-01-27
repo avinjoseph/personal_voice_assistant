@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # 1. ORCHESTRATOR (The Brain)
   orchestrator:
-    build: ./orchestrator
+    image: avin5644/voice-assistant-orchestrator:v1
     container_name: orchestrator
     ports:
       - "8000:8000"
@@ -21,7 +21,7 @@ services:
 
   # 2. WHISPER (ASR)
   whisper-service:
-    build: ./whisper_service
+    image: avin5644/voice-assistant-whisper:v1
     container_name: whisper_service
     ports:
       - "8001:8001"
@@ -41,7 +41,7 @@ services:
 
   # 3. MELO TTS (Speech Synthesis)
   tts-service:
-    build: ./tts_service
+    image: avin5644/voice-assistant-tts:v1
     container_name: tts_service
     ports:
       - "8002:8002"

@@ -1,79 +1,104 @@
 # Personal Voice Assistant
 
-A voice assistant application for experimenting with state-of-the-art transcription and response generation models. This project uses [Faster Whisper](https://github.com/guillaumekln/faster-whisper) for transcription and a local LLM via [Ollama](https://ollama.com/) for generating responses.
+A microservices-based voice assistant application that uses state-of-the-art models for transcription, response generation, and speech synthesis.
+
+## Architecture
+
+This project is composed of several containerized services that work together:
+
+-   **UI (`ui`)**: A Streamlit-based web interface to interact with the assistant.
+-   **Orchestrator (`orchestrator`)**: The central "brain" of the application. It receives transcribed text, calls the LLM for a response, and coordinates with other services.
+-   **Whisper Service (`whisper-service`)**: A dedicated service for highly accurate speech-to-text transcription using Faster Whisper.
+-   **TTS Service (`tts-service`)**: A service for converting the assistant's text responses back into speech using MeloTTS.
+-   **Ollama (`ollama`)**: Hosts the local Large Language Model (e.g., Gemma 2B) that generates intelligent responses.
 
 ---
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-
-- **Python 3.10**
-- An NVIDIA GPU with a compatible CUDA version (optional, for GPU acceleration).
-- [Ollama](https://ollama.com/) installed and running. You'll also need to have a model pulled, for example:
-  ```bash
-  ollama run gemma3:1b
-  ```
-
-### Setup Instructions
-
-1.  **Clone the repository and navigate to the project directory.**
-
-2.  **Create and activate a Python virtual environment:**
-
-    ```bash
-    # Create the virtual environment
-    python -m venv .venv
-
-    # Activate the environment
-    # On Windows:
-    .venv\Scripts\activate
-    # On macOS/Linux:
-    source .venv/bin/activate
-    ```
-
-3.  **Install the required packages:**
-    ```bash
-    pip install -r conversation-engine/requirements.txt
-    ```
-
-### Important: Installing PyTorch for GPU Support
-
-By default, `pip` will install a CPU-only version of PyTorch. If you have a compatible NVIDIA GPU, you can get a significant performance boost for transcription by following these steps:
-
-1.  **Uninstall the default version of PyTorch:**
-    ```bash
-    pip uninstall torch
-    ```
-2.  **Install the CUDA-enabled version:**
-    - Go to the [PyTorch website](https://pytorch.org/get-started/locally/).
-    - Select the options that match your system (e.g., `Windows`, `Pip`, your version of `CUDA`).
-    - Run the generated command. It will look something like this:
-    ```bash
-    # This is an example for CUDA 12.1. Use the command from the website.
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-    ```
-
-### MeloTTS Setup
-
-The Text-to-Speech model, MeloTTS, requires an additional setup step to download necessary resources.
-
-1.  **Download NLTK Data:**
-    After installing the requirements, run the following Python code to download the `averaged_perceptron_tagger_eng` for NLTK, which is used for English part-of-speech tagging.
-    ```python
-    import nltk
-    nltk.download('averaged_perceptron_tagger_eng')
-    ```
-    You can do this in a Python interpreter or by saving the code to a file and running it.
+-   **Docker and Docker Compose**: To run the containerized application.
+-   **Git**: To clone the repository.
+-   **(Recommended) NVIDIA GPU**: For significantly faster model inference. You must have the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed.
 
 ---
 
-## How to Run
+## 🚀 Getting Started
 
-After completing the setup and ensuring Ollama is running, start the voice assistant:
+Follow these steps to set up and run the voice assistant on your local machine.
+
+### 1. Clone the Repository
 
 ```bash
-python main.py
+git clone <your-repository-url>
+cd personal-voice-assistant
 ```
 
-The application will use your default microphone. Speak, and the assistant will respond after you stop talking. To exit, press `Ctrl+C`.
+### 2. Configure Your Environment
+
+Create a file named `.env` in the root of the project. This file will hold your local configuration.
+
+```bash
+# .env
+TEAM_CALENDAR_ID=your_calendar_id_here
+DEVICE=cuda
+```
+
+**Variable Reference:**
+-   `TEAM_CALENDAR_ID`: An identifier for the calendar tool (you can leave the default if unsure).
+-   `DEVICE`: Set to `cuda` to use an NVIDIA GPU or `cpu` to run on the CPU. Note that CPU mode will be very slow.
+
+### 3. Download the AI Models
+
+Before launching the application, you need to download the Ollama LLM into the shared model cache. A helper script is provided for this.
+
+```bash
+# On Linux or macOS
+bash model_puller.sh
+
+# On Windows (using Git Bash or WSL)
+sh model_puller.sh
+```
+
+This script will:
+1.  Create the `model_cache` directory.
+2.  Run a temporary Docker container to download the `gemma:2b` model.
+
+The other models (Whisper and TTS) will be downloaded automatically by their services on the first run and stored in the `model_cache` directory.
+
+### 4. Launch the Application
+
+With the configuration in place and the base model downloaded, you can start all the services using Docker Compose.
+
+```bash
+docker-compose -f docker-compose-services.yml -f docker-compose-web.yml up -d --build
+```
+
+This command will:
+-   Pull the pre-built images for the services from Docker Hub.
+-   Start all services in detached mode (`-d`).
+-   `--build` ensures that any local changes to Dockerfiles are applied if you switch from `image` to `build` directives.
+
+### 5. Access the Voice Assistant
+
+Once the containers are running, you can access the web interface by navigating to:
+
+**`http://localhost:8501`**
+
+### 6. Stopping the Application
+
+To stop all running services, use the following command:
+
+```bash
+docker-compose -f docker-compose-services.yml -f docker-compose-web.yml down
+```
+
+---
+
+## Development Notes
+
+The services are configured in `docker-compose-services.yml` to use pre-built images from Docker Hub (e.g., `image: avin5644/voice-assistant-orchestrator:v1`).
+
+If you want to modify the source code of a service, you would need to:
+1.  Comment out the `image` line for that service.
+2.  Uncomment or add a `build: ./<service-directory>` line.
+3.  Re-run the `docker-compose up` command to build the image from your local source code.

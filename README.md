@@ -16,6 +16,7 @@ This project is composed of several containerized services that work together:
 
 ## Prerequisites
 
+-   **Docker Desktop**: Install Docker Desktop for windows or mac
 -   **Docker and Docker Compose**: To run the containerized application.
 -   **Git**: To clone the repository.
 -   **(Recommended) NVIDIA GPU**: For significantly faster model inference. You must have the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed.
@@ -35,13 +36,15 @@ cd personal-voice-assistant
 
 ### 2. Configure Your Environment
 
+Env file is already present in the repository if wanted.
 Create a file named `.env` in the root of the project. This file will hold your local configuration.
 
 ```bash
 # .env
 TEAM_CALENDAR_ID=your_calendar_id_here
-DEVICE=cuda
+DEVICE=cpu # or DEVICE=gpu
 ```
+
 
 **Variable Reference:**
 -   `TEAM_CALENDAR_ID`: An identifier for the calendar tool (you can leave the default if unsure).
@@ -67,16 +70,33 @@ The other models (Whisper and TTS) will be downloaded automatically by their ser
 
 ### 4. Launch the Application
 
-With the configuration in place and the base model downloaded, you can start all the services using Docker Compose.
+The application is split into two parts: backend services and the web UI, which can be managed separately. It's recommended to start the backend services first.
+
+#### Launching Backend Services
+These services include the orchestrator, transcription, text-to-speech, and the LLM.
+
+**(Recommended)  To Build the backend services seperately for low system with low specification. Commands are in the Development Notes**
 
 ```bash
-docker-compose -f docker-compose-services.yml -f docker-compose-web.yml up -d --build
+docker-compose -f docker-compose-services.yml up -d --build
 ```
 
-This command will:
--   Pull the pre-built images for the services from Docker Hub.
--   Start all services in detached mode (`-d`).
--   `--build` ensures that any local changes to Dockerfiles are applied if you switch from `image` to `build` directives.
+#### Verify Ollama Model (Optional)
+After starting the backend, you can verify that the `gemma:2b` model is available.
+```bash
+# Check if the model is listed
+docker exec -it ollama ollama list
+
+# If gemma:2b is not in the list, pull it manually:
+docker exec -it ollama ollama pull gemma:2b
+```
+
+#### Launching the Web UI
+This service runs the Streamlit user interface.
+
+```bash
+docker-compose -f docker-compose-web.yml up -d --build
+```
 
 ### 5. Access the Voice Assistant
 
@@ -86,19 +106,59 @@ Once the containers are running, you can access the web interface by navigating 
 
 ### 6. Stopping the Application
 
-To stop all running services, use the following command:
+You can stop the services and the UI separately, which is useful for development.
 
 ```bash
-docker-compose -f docker-compose-services.yml -f docker-compose-web.yml down
+# To stop all backend services
+docker-compose -f docker-compose-services.yml down
+
+# To stop the web UI
+docker-compose -f docker-compose-web.yml down
 ```
 
 ---
 
 ## Development Notes
 
-The services are configured in `docker-compose-services.yml` to use pre-built images from Docker Hub (e.g., `image: avin5644/voice-assistant-orchestrator:v1`).
+The services are configured in the `docker-compose` files to use pre-built images from Docker Hub (e.g., `image: avin5644/voice-assistant-orchestrator:v1`).
 
 If you want to modify the source code of a service, you would need to:
-1.  Comment out the `image` line for that service.
+1.  Comment out the `image` line for that service in its `docker-compose-*.yml` file.
 2.  Uncomment or add a `build: ./<service-directory>` line.
-3.  Re-run the `docker-compose up` command to build the image from your local source code.
+3.  Re-run the appropriate `up` command to build the image from your local source code.
+
+---
+
+## Advanced Docker Commands
+
+### Managing Backend Services (`orchestrator`, `whisper-service`, `tts-service`, `ollama`)
+
+-   **Build & Run a specific service:**
+    ```bash
+    docker-compose -f docker-compose-services.yml up -d --build <service_name>
+    # Example:
+    docker-compose -f docker-compose-services.yml up -d --build orchestrator
+    ```
+-   **Stop a specific service:**
+    ```bash
+    docker-compose -f docker-compose-services.yml stop <service_name>
+    ```
+-   **View logs:**
+    ```bash
+    docker-compose -f docker-compose-services.yml logs -f <service_name>
+    ```
+
+### Managing the Web UI (`ui`)
+
+-   **Build & Run the UI:**
+    ```bash
+    docker-compose -f docker-compose-web.yml up -d --build
+    ```
+-   **Stop the UI:**
+    ```bash
+    docker-compose -f docker-compose-web.yml stop
+    ```
+-   **View UI logs:**
+    ```bash
+    docker-compose -f docker-compose-web.yml logs -f
+    ```

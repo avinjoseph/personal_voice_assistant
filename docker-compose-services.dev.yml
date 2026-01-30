@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  # 1. ORCHESTRATOR (The Brain)
+  orchestrator:
+    image: avin5644/voice-assistant-orchestrator:v2
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    container_name: orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - WHISPER_URL=http://whisper-service:8001
+      - TTS_URL=http://tts-service:8002
+      - OLLAMA_URL=http://ollama:11434
+      - TEAM_CALENDAR_ID=${TEAM_CALENDAR_ID}
+    networks:
+      - voice-network
+    depends_on:
+      - whisper-service
+      - tts-service
+      - ollama
+
+  # 2. WHISPER (ASR)
+  whisper-service:
+    image: avin5644/voice-assistant-whisper:v2
+    build:
+      context: ./whisper
+      dockerfile: Dockerfile
+    container_name: whisper_service
+    ports:
+      - "8001:8001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/huggingface:/root/.cache/huggingface
+    environment:
+      - DEVICE=${DEVICE}
+    networks:
+      - voice-network
+
+  # 3. MELO TTS (Speech Synthesis)
+  tts-service:
+    image: avin5644/voice-assistant-tts:v2
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    container_name: tts_service
+    ports:
+      - "8002:8002"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/huggingface:/root/.cache/huggingface
+    environment:
+      - DEVICE=${DEVICE}
+    networks:
+      - voice-network
+
+  # 4. OLLAMA (LLM) – still image-only
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./model_cache/ollama:/root/.ollama
+    environment:
+      - OLLAMA_LOAD_TIMEOUT=30m
+      - OLLAMA_KEEP_ALIVE=-1
+    networks:
+      - voice-network
+
+networks:
+  voice-network:
+    name: voice_shared_net
+    driver: bridge

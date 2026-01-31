@@ -1,16 +1,18 @@
 version: '3.8'
 
-name: voice-prod
+name: voice-dev
 services:
   ui:
     image: avin5644/voice-assistant-ui:v2
-    container_name: voice_ui
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
     ports:
       - "8501:8501"
     environment:
       - ORCHESTRATOR_URL=http://orchestrator:8000
     volumes:
-      - ./ui:/app  # Live reload for development
+      - ./ui:/app   # Live reload for development
     networks:
       - voice-network
 

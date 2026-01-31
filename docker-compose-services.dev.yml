@@ -1,11 +1,14 @@
 version: "3.8"
 
-name: voice-prod
+name: voice-dev
+
 services:
   # 1. ORCHESTRATOR (The Brain)
   orchestrator:
     image: avin5644/voice-assistant-orchestrator:v2
-    container_name: orchestrator
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -23,7 +26,9 @@ services:
   # 2. WHISPER (ASR)
   whisper-service:
     image: avin5644/voice-assistant-whisper:v2
-    container_name: whisper_service
+    build:
+      context: ./whisper_service
+      dockerfile: Dockerfile
     ports:
       - "8001:8001"
     deploy:
@@ -43,7 +48,9 @@ services:
   # 3. MELO TTS (Speech Synthesis)
   tts-service:
     image: avin5644/voice-assistant-tts:v2
-    container_name: tts_service
+    build:
+      context: ./tts_service
+      dockerfile: Dockerfile
     ports:
       - "8002:8002"
     deploy:
@@ -55,16 +62,14 @@ services:
               capabilities: [gpu]
     volumes:
       - ./model_cache/huggingface:/root/.cache/huggingface
-     # - ./model_cache/nltk:/root/nltk_data
     environment:
       - DEVICE=${DEVICE}
     networks:
       - voice-network
 
-  # 4. OLLAMA (LLM)
+  # 4. OLLAMA (LLM) – still image-only
   ollama:
     image: ollama/ollama:latest
-    container_name: ollama
     ports:
       - "11434:11434"
     deploy:
@@ -76,12 +81,12 @@ services:
               capabilities: [gpu]
     volumes:
       - ./model_cache/ollama:/root/.ollama
+    environment:
+      - OLLAMA_LOAD_TIMEOUT=30m
+      - OLLAMA_KEEP_ALIVE=-1
     networks:
       - voice-network
 
-    environment:
-      - OLLAMA_LOAD_TIMEOUT=30m # Wait up to 30 mins for model to load
-      - OLLAMA_KEEP_ALIVE=-1
 networks:
   voice-network:
     name: voice_shared_net

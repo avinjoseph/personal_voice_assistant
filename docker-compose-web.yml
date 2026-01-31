@@ -3,7 +3,7 @@ version: '3.8'
 name: voice-prod
 services:
   ui:
-    image: avin5644/voice-assistant-ui:v1
+    image: avin5644/voice-assistant-ui:v2
     container_name: voice_ui
     ports:
       - "8501:8501"

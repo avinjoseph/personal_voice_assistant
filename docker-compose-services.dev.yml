@@ -1,5 +1,7 @@
 version: "3.8"
 
+name: voice-dev
+
 services:
   # 1. ORCHESTRATOR (The Brain)
   orchestrator:
@@ -7,7 +9,6 @@ services:
     build:
       context: ./orchestrator
       dockerfile: Dockerfile
-    container_name: orchestrator
     ports:
       - "8000:8000"
     environment:
@@ -26,9 +27,8 @@ services:
   whisper-service:
     image: avin5644/voice-assistant-whisper:v2
     build:
-      context: ./whisper
+      context: ./whisper_service
       dockerfile: Dockerfile
-    container_name: whisper_service
     ports:
       - "8001:8001"
     deploy:
@@ -49,9 +49,8 @@ services:
   tts-service:
     image: avin5644/voice-assistant-tts:v2
     build:
-      context: ./tts
+      context: ./tts_service
       dockerfile: Dockerfile
-    container_name: tts_service
     ports:
       - "8002:8002"
     deploy:
@@ -71,7 +70,6 @@ services:
   # 4. OLLAMA (LLM) – still image-only
   ollama:
     image: ollama/ollama:latest
-    container_name: ollama
     ports:
       - "11434:11434"
     deploy:

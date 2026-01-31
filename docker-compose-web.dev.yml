@@ -1,12 +1,12 @@
 version: '3.8'
 
+name: voice-dev
 services:
   ui:
     image: avin5644/voice-assistant-ui:v2
     build:
       context: ./ui
       dockerfile: Dockerfile
-    container_name: voice_ui
     ports:
       - "8501:8501"
     environment:

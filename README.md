@@ -1,3 +1,10 @@
+## Team Members
+1. Avin Joseph
+2. Nevin Sunny
+3. Ben Reji
+4. Abhirami Anilkumar Shiva 
+
+
 # Personal Voice Assistant
 
 A microservices-based voice assistant application that uses state-of-the-art models for transcription, response generation, and speech synthesis.
@@ -52,7 +59,11 @@ DEVICE=cpu # or DEVICE=gpu
 
 ### 3. Download the AI Models
 
-Before launching the application, you need to download the Ollama LLM into the shared model cache. A helper script is provided for this.
+Before launching the application, you need to set up the model cache directories and ensure the Ollama LLM is available.
+
+#### a. Create Cache Directories
+
+First, run the `model_puller.sh` script to create the necessary cache directories on your host machine.
 
 ```bash
 # On Linux or macOS
@@ -63,58 +74,37 @@ sh model_puller.sh
 ```
 
 This script will:
-1.  Create the `model_cache` directory.
-2.  Run a temporary Docker container to download the `gemma:2b` model.
+1.  Create the `model_cache` directory and its subdirectories (`ollama`, `huggingface`, `nltk`).
 
-The other models (Whisper and TTS) will be downloaded automatically by their services on the first run and stored in the `model_cache` directory.
+#### b. Pull Ollama Model (gemma:2b)
 
-### 4. Launch the Application
+The `gemma:2b` model for Ollama needs to be pulled into the running Ollama container.
 
-The application is split into two parts: backend services and the web UI, which can be managed separately. It's recommended to start the backend services first.
-
-#### Launching Backend Services
-These services include the orchestrator, transcription, text-to-speech, and the LLM.
-
-**(Recommended)  To Build the backend services seperately for low system with low specification. Commands are in the Development Notes**
+# Check if the model is listed                                                                          │
 
 ```bash
-docker-compose -f docker-compose-services.yml up -d --build
+docker exec -it ollama ollama list
+```
+If Not, then
+
+First, ensure your `ollama` service is running:
+
+```bash
+docker-compose -f docker-compose-services.yml -f docker-compose-web.yml up -d ollama
 ```
 
-#### Verify Ollama Model (Optional)
-After starting the backend, you can verify that the `gemma:2b` model is available.
-```bash
-# Check if the model is listed
-docker exec -it ollama ollama list
+Once the `ollama` container is up, pull the `gemma:2b` model:
 
-# If gemma:2b is not in the list, pull it manually:
+```bash
 docker exec -it ollama ollama pull gemma:2b
 ```
 
-#### Launching the Web UI
-This service runs the Streamlit user interface.
-
+You can verify the model has been pulled successfully by listing available models:
 ```bash
-docker-compose -f docker-compose-web.yml up -d --build
+docker exec -it ollama ollama list
 ```
 
-### 5. Access the Voice Assistant
-
-Once the containers are running, you can access the web interface by navigating to:
-
-**`http://localhost:8501`**
-
-### 6. Stopping the Application
-
-You can stop the services and the UI separately, which is useful for development.
-
-```bash
-# To stop all backend services
-docker-compose -f docker-compose-services.yml down
-
-# To stop the web UI
-docker-compose -f docker-compose-web.yml down
-```
+The other models (Whisper and TTS) will be downloaded automatically by their services on the first run and stored in the `model_cache` directory.
 
 ---
 
